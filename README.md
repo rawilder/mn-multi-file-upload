@@ -1,6 +1,5 @@
 How to encounter hanging first request:
 ```
-./gradlew clean build
-./gradlew run
+./gradlew clean run
 # make request against /uploadMultiple
 ```
