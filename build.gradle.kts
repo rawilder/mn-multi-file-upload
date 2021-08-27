@@ -40,6 +40,7 @@ dependencies {
     implementation("io.micronaut:micronaut-validation")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$kotlinCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:$kotlinCoroutinesVersion")
 
     runtimeOnly("com.fasterxml.jackson.module:jackson-module-kotlin")
 
