@@ -1,57 +1,34 @@
 package com.example
 
-import io.micronaut.http.HttpResponse
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.multipart.StreamingFileUpload
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.reduce
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
-import reactor.core.scheduler.Schedulers
-import java.util.concurrent.atomic.LongAdder
 
 @Controller
 class TestController {
 
-    @Post(value = "/uploadMultiple", consumes = [MediaType.MULTIPART_FORM_DATA])
-    fun uploadTestMultiple(
-        files: Publisher<StreamingFileUpload>
-    ): Publisher<HttpResponse<Long>> {
-        return Flux.from(files).subscribeOn(Schedulers.boundedElastic()).flatMap {
-            Flux.from(it).map { p -> p.bytes }
-        }.collect(
-            { LongAdder() }
-        ) { adder: LongAdder, bytes: ByteArray ->
-            adder.add(
-                bytes.size.toLong()
-            )
-        }
-            .map { adder: LongAdder ->
-                HttpResponse.ok(
-                    adder.toLong()
-                )
-            }
+    @Post(value = "/upload", consumes = [MediaType.MULTIPART_FORM_DATA])
+    suspend fun upload(
+        file: StreamingFileUpload
+    ): Int {
+        return Flux.from(file).map { p -> p.bytes.size }.reduce { f, s -> f + s }.awaitSingle()
     }
 
-    @Post(value = "/uploadMultipleSuspend", consumes = [MediaType.MULTIPART_FORM_DATA])
-    suspend fun uploadTestMultipleSuspend(
+    @Post(value = "/uploadMultiple", consumes = [MediaType.MULTIPART_FORM_DATA])
+    suspend fun uploadTestMultiple(
         files: Publisher<StreamingFileUpload>
-    ): HttpResponse<Long> {
-        return Flux.from(files).subscribeOn(Schedulers.boundedElastic()).flatMap {
-            Flux.from(it).map { p -> p.bytes }
-        }.collect(
-            { LongAdder() }
-        ) { adder: LongAdder, bytes: ByteArray ->
-            adder.add(
-                bytes.size.toLong()
-            )
-        }
-            .map { adder: LongAdder ->
-                HttpResponse.ok(
-                    adder.toLong()
-                )
-            }.awaitSingle()
+    ): Int? {
+        return files.asFlow().map {
+            println(it.filename)
+            Flux.from(it).map { p -> p.bytes.size }.reduce { f, s -> f + s }.awaitSingle()
+        }.reduce { f, s -> (f ?: 0) + (s ?: 0) }
     }
 }
 
