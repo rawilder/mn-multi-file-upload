@@ -5,6 +5,9 @@ import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
 import io.micronaut.http.multipart.StreamingFileUpload
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.reduce
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
@@ -52,6 +55,11 @@ class TestController {
                     adder.toLong()
                 )
             }.awaitSingle()
+    }
+
+    @Post(value = "/uploadSuspend", consumes = [MediaType.MULTIPART_FORM_DATA])
+    suspend fun uploadSuspend(file: StreamingFileUpload): Int {
+        return file.asFlow().map { it.bytes.size }.reduce { accumulator, value -> accumulator + value }
     }
 }
 
